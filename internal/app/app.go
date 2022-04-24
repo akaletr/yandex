@@ -1,17 +1,15 @@
 package app
 
 import (
+	"crypto/sha1"
+	"encoding/base64"
 	"fmt"
-	"github.com/akaletr/yandex/internal/storage"
 	"io"
 	"log"
-	"math/rand"
 	"net/http"
-	"strconv"
+	"net/url"
+	"strings"
 )
-
-type database struct {
-}
 
 var data map[string]string = map[string]string{}
 
@@ -21,8 +19,6 @@ type App interface {
 }
 
 type server struct {
-	storage storage.Storage
-	name    string
 }
 
 func NewServer() (App, error) {
@@ -35,6 +31,8 @@ func (app *server) Start() error {
 }
 
 func addURL(w http.ResponseWriter, r *http.Request) {
+	fmt.Println(data)
+
 	switch r.Method {
 	case http.MethodPost:
 		w.WriteHeader(http.StatusCreated)
@@ -43,13 +41,25 @@ func addURL(w http.ResponseWriter, r *http.Request) {
 			log.Fatal(err)
 		}
 
-		link := fmt.Sprint("/", strconv.Itoa(rand.Int()))
-		data[link] = string(body)
-		_, _ = w.Write([]byte(link))
+		hasher := sha1.New()
+		hasher.Write(body)
+		linkID := base64.URLEncoding.EncodeToString(hasher.Sum(nil))
+
+		data[linkID] = string(body)
+
+		link := url.URL{
+			Scheme: "http",
+			Host:   r.Host,
+			Path:   linkID,
+		}
+
+		_, _ = w.Write([]byte(link.String()))
 	case http.MethodGet:
-		link, ok := data[r.URL.String()]
+		link, ok := data[strings.TrimPrefix(r.URL.Path, "/")]
+
+		fmt.Println("linkID", link)
 		if ok {
-			w.Header().Set("Location", data[link])
+			w.Header().Set("Location", link)
 			w.WriteHeader(http.StatusTemporaryRedirect)
 		}
 
