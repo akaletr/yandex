@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"github.com/akaletr/yandex/internal/app"
 	"log"
 )
@@ -11,8 +10,6 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-
-	fmt.Println()
 
 	log.Fatal(server.Start())
 }

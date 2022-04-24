@@ -1,51 +1,47 @@
 package app
 
 import (
-	"crypto/sha1"
-	"encoding/base64"
 	"fmt"
 	"io"
-	"log"
 	"net/http"
 	"net/url"
 	"strings"
+
+	"github.com/akaletr/yandex/internal/storage"
 )
 
-var data map[string]string = map[string]string{}
-
 type App interface {
-	Write(url string) (string, error)
 	Start() error
 }
 
 type server struct {
+	storage storage.Storage
 }
 
 func NewServer() (App, error) {
-	return &server{}, nil
+	return &server{
+		storage: storage.NewStorage(),
+	}, nil
 }
 
 func (app *server) Start() error {
-	http.HandleFunc("/", addURL)
+	http.HandleFunc("/", app.handler)
 	return http.ListenAndServe(":8080", nil)
 }
 
-func addURL(w http.ResponseWriter, r *http.Request) {
-	fmt.Println(data)
-
+func (app *server) handler(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case http.MethodPost:
 		w.WriteHeader(http.StatusCreated)
 		body, err := io.ReadAll(r.Body)
 		if err != nil {
-			log.Fatal(err)
+			fmt.Println(err)
 		}
 
-		hasher := sha1.New()
-		hasher.Write(body)
-		linkID := base64.URLEncoding.EncodeToString(hasher.Sum(nil))
-
-		data[linkID] = string(body)
+		linkID, err := app.storage.Write(string(body))
+		if err != nil {
+			fmt.Println(err)
+		}
 
 		link := url.URL{
 			Scheme: "http",
@@ -55,23 +51,16 @@ func addURL(w http.ResponseWriter, r *http.Request) {
 
 		_, _ = w.Write([]byte(link.String()))
 	case http.MethodGet:
-		link, ok := data[strings.TrimPrefix(r.URL.Path, "/")]
+		link, err := app.storage.Read(strings.TrimPrefix(r.URL.Path, "/"))
 
-		fmt.Println("linkID", link)
-		if ok {
-			w.Header().Set("Location", link)
-			w.WriteHeader(http.StatusTemporaryRedirect)
+		if err != nil {
+			w.WriteHeader(http.StatusNotFound)
+			_, _ = w.Write([]byte(""))
 		}
-
-		w.WriteHeader(http.StatusNotFound)
-		_, _ = w.Write([]byte(""))
+		w.Header().Set("Location", link)
+		w.WriteHeader(http.StatusTemporaryRedirect)
 	default:
 		w.WriteHeader(http.StatusNotFound)
 	}
 
-}
-
-func (app *server) Write(url string) (string, error) {
-	fmt.Println("It works")
-	return url, nil
 }
