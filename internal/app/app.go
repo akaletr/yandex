@@ -11,7 +11,6 @@ import (
 	"github.com/akaletr/yandex/internal/storage"
 
 	"github.com/go-chi/chi/v5"
-	"github.com/go-chi/chi/v5/middleware"
 )
 
 type App interface {
@@ -30,7 +29,6 @@ func NewServer() (*server, error) {
 
 func (app *server) Start() error {
 	router := chi.NewRouter()
-	router.Use(middleware.Logger)
 
 	router.Post("/", app.addLink)
 	router.Get("/{id}", app.getLink)
