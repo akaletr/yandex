@@ -4,10 +4,11 @@ import (
 	"crypto/sha1"
 	"encoding/base64"
 	"fmt"
-	"github.com/akaletr/yandex/internal/storage"
 	"io"
 	"net/http"
 	"net/url"
+
+	"github.com/akaletr/yandex/internal/storage"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
@@ -19,13 +20,11 @@ type App interface {
 
 type server struct {
 	storage storage.Storage
-	path    string
 }
 
 func NewServer() (*server, error) {
 	return &server{
 		storage: storage.NewStorage(),
-		path:    "http://localhost",
 	}, nil
 }
 
@@ -36,7 +35,7 @@ func (app *server) Start() error {
 	router.Post("/", app.addLink)
 	router.Get("/{id}", app.getLink)
 
-	return http.ListenAndServe(":8080", nil)
+	return http.ListenAndServe(":8080", router)
 }
 
 func (app *server) addLink(w http.ResponseWriter, r *http.Request) {
