@@ -1,6 +1,6 @@
 package storage
 
 type Storage interface {
-	Write(url string) (string, error)
-	Read(id string) (string, error)
+	Write(key, value string) error
+	Read(key string) (string, error)
 }

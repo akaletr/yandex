@@ -1,8 +1,6 @@
 package storage
 
 import (
-	"crypto/sha1"
-	"encoding/base64"
 	"errors"
 )
 
@@ -16,17 +14,9 @@ func NewStorage() Storage {
 	}
 }
 
-func (storage *storage) Write(link string) (string, error) {
-	hasher := sha1.New()
-	_, err := hasher.Write([]byte(link))
-	if err != nil {
-		return "", err
-	}
-
-	linkID := base64.URLEncoding.EncodeToString(hasher.Sum(nil))
-	storage.data[linkID] = link
-
-	return linkID, nil
+func (storage *storage) Write(key, value string) error {
+	storage.data[key] = value
+	return nil
 }
 
 func (storage *storage) Read(id string) (string, error) {

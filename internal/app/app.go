@@ -1,6 +1,8 @@
 package app
 
 import (
+	"crypto/sha1"
+	"encoding/base64"
 	"fmt"
 	"io"
 	"net/http"
@@ -38,7 +40,12 @@ func (app *server) handler(w http.ResponseWriter, r *http.Request) {
 			fmt.Println(err)
 		}
 
-		linkID, err := app.storage.Write(string(body))
+		hasher := sha1.New()
+		_, err = hasher.Write(body)
+
+		linkID := base64.URLEncoding.EncodeToString(hasher.Sum(nil))
+
+		err = app.storage.Write(linkID, string(body))
 		if err != nil {
 			fmt.Println(err)
 		}
