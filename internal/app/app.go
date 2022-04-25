@@ -44,7 +44,7 @@ func (app *server) addLink(w http.ResponseWriter, r *http.Request) {
 	}
 
 	hasher := sha1.New()
-	_, err = hasher.Write(body)
+	_, _ = hasher.Write(body)
 
 	linkID := base64.URLEncoding.EncodeToString(hasher.Sum(nil))
 
